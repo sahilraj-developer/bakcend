@@ -16,7 +16,19 @@ conenctDb(DATABASE_URL);
 
 // json - when we making apis
 
+
+const userRoutes = require('./routes/userRoutes');
+
 app.use(express.json())
 
 
-app.listen(port,console.log(`app is runningat ${port}`))
+
+
+// load routes
+
+app.use('/api/user',userRoutes)
+
+
+app.listen(port,console.log(`app is runningat http://loacalhost:${port}`))
+
+

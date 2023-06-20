@@ -12,7 +12,7 @@ const userSchema = mongoose.Schema({
 
 // model 
 
-const userModel = userSchema.model("user",userSchema)
+const userModel = mongoose.model("User",userSchema)
 //                          name craete in db   based on which schema
 
 
