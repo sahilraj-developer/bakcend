@@ -21,6 +21,7 @@ const userRegistration = async(req,res)=>{
                     name:name,email:email,password:hashPassword,tc:tc
                 })
                 await doc.save()
+                res.status(201).send({"status":"success","message":"Register success"})
             }catch(error){
                 res.send({"status":"failed","message":"Unable to register"})
 

@@ -1,34 +1,20 @@
 const express = require('express');
-const app =express();
-
+const app = express();
 require('dotenv').config();
 const port = process.env.PORT;
-
 const cors = require('cors');
-
-app.use(cors());
-
-const conenctDb =require('./config/connectdb')
+const connectDb = require('./config/connectdb');
 
 const DATABASE_URL = process.env.DATABASE_URL;
 
-conenctDb(DATABASE_URL);
+connectDb(DATABASE_URL);
 
-// json - when we making apis
-
+app.use(cors());
+app.use(express.json());
 
 const userRoutes = require('./routes/userRoutes');
+app.use('/api/user', userRoutes);
 
-app.use(express.json())
-
-
-
-
-// load routes
-
-app.use('/api/user',userRoutes)
-
-
-app.listen(port,console.log(`app is runningat http://loacalhost:${port}`))
-
-
+app.listen(port, () => {
+  console.log(`App is running at http://localhost:${port}`);
+});
