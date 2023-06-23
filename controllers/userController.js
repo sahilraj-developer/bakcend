@@ -1,9 +1,10 @@
 const UserModel = require('../models/User')
 const bcrypt = require('bcrypt')
-const jwt =require('jsonwebtoken')
+const jwt =require('jsonwebtoken');
+const userModel = require('../models/User');
 
 
-const userRegistration = async(req,res)=>{
+exports.userRegistration = async(req,res)=>{
     const {name,email,password,password_confirmation,tc} =req.body;
     const user = await UserModel.findOne({email:email})
     if(user){
@@ -21,7 +22,11 @@ const userRegistration = async(req,res)=>{
                     name:name,email:email,password:hashPassword,tc:tc
                 })
                 await doc.save()
-                res.status(201).send({"status":"success","message":"Register success"})
+                const saved_user = await userModel.findOne({email:email})
+                // generate the jwt joken
+                const token = jwt.sign({userID:saved_user._id},process.env.JWT_SECRECT_KEY,{expiresIn:'5d'})
+
+                res.status(201).send({"status":"success","message":"Register success","token":token})
             }catch(error){
                 res.send({"status":"failed","message":"Unable to register"})
 
@@ -39,4 +44,55 @@ const userRegistration = async(req,res)=>{
     }
 }
 
-module.exports = userRegistration;
+exports.userLogin =async (req,res)=>{
+    try{
+        const {email,password}=req.body;
+        if(email && password){
+            const user = await UserModel.findOne({email:email})
+            if(user !==null){
+                const isMatch = await bcrypt.compare(password, user.password)
+                if(isMatch){
+                    if((user.email == email) && isMatch){
+
+                         // generate the jwt joken
+                const token = jwt.sign({userID:user._id},process.env.JWT_SECRECT_KEY,{expiresIn:'5d'})
+                        res.status(201).send({"status":"success","message":"Login Success","token":token});
+                    }else{
+                        res.status(201).send({"status":"failed","message":"Password or Email Does't Match"}) 
+                    }
+                }
+
+            }else{
+                res.status(201).send({"status":"failed","message":"Not A registred User"});
+            }
+
+        }else{
+            res.status(201).send({"status":"failed","message":"All fields are required"});
+        }
+
+    }catch(error){
+      res.send({"status":"failed","message":"unable to login"})
+    }
+
+}
+
+
+exports.changeUserPassword = async (req,res)=>{
+    const {password,password_confirmation}=req.body;
+    if(password && password_confirmation){
+        if(password !== password_confirmation){
+            res.send({"status":"failed","message":"new password and confirm password doesn't match"})
+        }else{ 
+            const salt = await bcrypt.genSalt(10)
+            const newHashPassword = await bcrypt.hash(password,salt)
+
+        }
+
+    }else{
+        res.send({"status":"failed","message":"All fields Are Required"})
+    }
+
+}
+
+
+
