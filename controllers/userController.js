@@ -85,12 +85,18 @@ exports.changeUserPassword = async (req,res)=>{
         }else{ 
             const salt = await bcrypt.genSalt(10)
             const newHashPassword = await bcrypt.hash(password,salt)
+            await UserModel.findByIdAndUpdate(req.user._id,{set:{password:newHashPassword}});
+            res.send({"status":"success", "message":"Password changed successfully"})
 
         }
-
     }else{
         res.send({"status":"failed","message":"All fields Are Required"})
     }
+
+}
+
+exports.loggedUser =async (req,res)=>{
+    res.send({"user":req.user})
 
 }
 
