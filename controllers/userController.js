@@ -2,6 +2,7 @@ const UserModel = require('../models/User')
 const bcrypt = require('bcrypt')
 const jwt =require('jsonwebtoken');
 const userModel = require('../models/User');
+const { transporter } = require('../config/emailConfig');
 
 
 exports.userRegistration = async(req,res)=>{
@@ -99,6 +100,67 @@ exports.loggedUser =async (req,res)=>{
     res.send({"user":req.user})
 
 }
+
+exports.sendUserPasswordResetMail = async(req,res)=>{
+    const {email} = req.body
+    if(email){
+        const user = await UserModel.findOne({email:email});
+        if(user){
+            const secret = user._id + process.env.JWT_SECRECT_KEY;
+          const token  = jwt.sign({userID:user._id}, secret,{expiresIn:'15m'})
+          const link = `http://127.0.0.1:3000/api/user/reset/${user._id}/${token}`
+        //   /api/user/reset/:id/:token
+
+
+        let info = await transporter.sendMail({
+            from:process.env.EMAIL_FROM,
+            to:user.email,
+            subject:"Reset Email - Password Reset Link",
+            html:`<a href=${link}>Click here  </a> to Reset Your Password`
+        })
+        req.send({"status":"success", "message":"Reset Password Email Has Been Send","info":info})
+        }else{
+            req.send({"status":"failed", "message":"User doesn't Exits"})
+        }
+    }else{let transporter = nodeMailer.createTransport({
+        host: process.env.EMAIL_HOST,
+        port: process.env.EMAIL_PORT,
+        secure: false,
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        }
+    })
+    req.send({"status":"failed", "message":"Email Field is Required"})
+    }}
+
+    exports.userPasswordReset =async(req,res)=>{
+        const {password,password_confirmation} = req.body
+        const {id,token} =req.params;
+        const user = await UserModel.findById(id);
+        const new_secret = user._id + process.env.JWT_SECRECT_KEY;
+
+        try{
+            jwt.verify(token,new_secret)
+            if(password && password_confirmation){
+                if(password !== password_confirmation){
+                    req.send({"status":"failed", "message":"New Password And Conform Password Doesn't Match"})
+                }else{
+                    const salt = bcrypt.genSalt(10);
+                    const newHashPassword = await bcrypt.hash(password,salt)
+                    await UserModel.findByIdAndUpdate(req.user,{$set:{password:newHashPassword}})
+                    res.send({"status":"failed","message":"Password reset Succesfully"})
+
+                }
+            }else{
+                req.send({"status":"failed", "message":"All Fields Are Required"})
+            }
+        }catch(error){
+            req.send({"status":"failed", "message":"Invalid token"})
+        }
+    } 
+
+
 
 
 
