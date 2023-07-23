@@ -25,7 +25,7 @@ exports.userRegistration = async(req,res)=>{
                 await doc.save()
                 const saved_user = await userModel.findOne({email:email})
                 // generate the jwt joken
-                const token = jwt.sign({userID:saved_user._id},process.env.JWT_SECRECT_KEY,{expiresIn:'5d'})
+                const token = jwt.sign({userID:saved_user._id},process.env.JWT_SECRET_KEY,{expiresIn:'5d'})
 
                 res.status(201).send({"status":"success","message":"Register success","token":token})
             }catch(error){
@@ -56,7 +56,7 @@ exports.userLogin =async (req,res)=>{
                     if((user.email == email) && isMatch){
 
                          // generate the jwt joken
-                const token = jwt.sign({userID:user._id},process.env.JWT_SECRECT_KEY,{expiresIn:'5d'})
+                const token = jwt.sign({userID:user._id},process.env.JWT_SECRET_KEY,{expiresIn:'5d'})
                         res.status(201).send({"status":"success","message":"Login Success","token":token});
                     }else{
                         res.status(201).send({"status":"failed","message":"Password or Email Does't Match"}) 
@@ -106,7 +106,7 @@ exports.sendUserPasswordResetMail = async(req,res)=>{
     if(email){
         const user = await UserModel.findOne({email:email});
         if(user){
-            const secret = user._id + process.env.JWT_SECRECT_KEY;
+            const secret = user._id + process.env.JWT_SECRET_KEY;
           const token  = jwt.sign({userID:user._id}, secret,{expiresIn:'15m'})
           const link = `http://127.0.0.1:3000/api/user/reset/${user._id}/${token}`
         //   /api/user/reset/:id/:token
@@ -138,7 +138,7 @@ exports.sendUserPasswordResetMail = async(req,res)=>{
         const {password,password_confirmation} = req.body
         const {id,token} =req.params;
         const user = await UserModel.findById(id);
-        const new_secret = user._id + process.env.JWT_SECRECT_KEY;
+        const new_secret = user._id + process.env.JWT_SECRET_KEY;
 
         try{
             jwt.verify(token,new_secret)
