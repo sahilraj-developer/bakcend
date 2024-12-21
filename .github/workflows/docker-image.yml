@@ -1,18 +1,80 @@
-name: Docker Image CI
+# name: Docker Image CI
 
+# on:
+#   push:
+#     branches: [ "backend" ]
+#   pull_request:
+#     branches: [ "backend" ]
+
+# jobs:
+
+#   build:
+
+#     runs-on: ubuntu-latest
+
+#     steps:
+#     - uses: actions/checkout@v4
+#     - name: Build the Docker image
+#       run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+
+
+name: Docker Compose CI/CD
+
+# Trigger workflow on push or pull request events
 on:
   push:
-    branches: [ "backend" ]
+    branches:
+      - backend
   pull_request:
-    branches: [ "backend" ]
+    branches:
+      - backend
 
 jobs:
-
-  build:
-
-    runs-on: ubuntu-latest
+  build-and-deploy:
+    runs-on: ubuntu-latest  # The environment where the job will run (Ubuntu in this case)
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+    # Step 1: Checkout the code
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Step 2: Set up Docker Buildx (used for building multi-platform Docker images)
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    # Step 3: Set up Docker Compose
+    - name: Set up Docker Compose
+      uses: docker/setup-qemu-action@v2
+      with:
+        platforms: linux/amd64,linux/arm64
+
+    # Step 4: Log in to Docker Hub (use GitHub Secrets to store Docker Hub credentials)
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}  # Add Docker Hub credentials in GitHub Secrets
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    # Step 5: Build the Docker Compose environment
+    - name: Build and start Docker containers
+      run: |
+        docker-compose -f docker-compose.yml build
+        docker-compose -f docker-compose.yml up -d
+
+    # Step 6: Run tests (Optional, adjust as needed for your application)
+    - name: Run Tests
+      run: |
+        # Example of running tests if you have any test command
+        docker exec -it server npm test  # Replace with your test command
+      continue-on-error: true  # Continue even if tests fail
+
+    # Step 7: Verify the Docker Compose environment is up and running
+    - name: Check Docker Containers
+      run: |
+        docker-compose -f docker-compose.yml ps  # Display container statuses
+
+    # Step 8: Shutdown the containers after the job is done
+    - name: Shutdown containers
+      run: |
+        docker-compose -f docker-compose.yml down
+
