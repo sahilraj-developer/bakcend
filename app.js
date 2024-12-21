@@ -13,6 +13,9 @@ app.use(cors());
 app.use(express.json());
 
 const userRoutes = require('./routes/userRoutes');
+app.get('/',(req,res)=>{
+  res.send({data:"health checker"})
+})
 app.use('/api/user', userRoutes);
 
 app.listen(port, () => {
